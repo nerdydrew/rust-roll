@@ -40,4 +40,12 @@ impl DiceTerm {
             })
             .collect()
     }
+
+    /// Returns the expected average value of this term.
+    pub fn average(&self) -> f64 {
+        match self {
+            Dice{count, sides} => count * (sides + 1) / 2.0,
+            Constant(constant) => constant as f64
+        }
+    }
 }
