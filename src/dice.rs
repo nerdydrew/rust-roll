@@ -3,7 +3,7 @@ use regex::Regex;
 use crate::dice::DiceTerm::{Constant, Dice};
 use std::convert::TryInto;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum DiceTerm {
     /// A dice roll like `2d20` or `-d20`.
     Dice { count: i32, sides: u32 },
@@ -17,9 +17,9 @@ impl DiceTerm {
         let s = s.to_lowercase();
 
         let dice_regex = Regex::new(r"(?x)
-(?P<dice>(?P<count>[+-]?\d*)d(?P<sides>\d+)) // XdY, where X is optional and can be negative
+(?P<dice>(?P<count>[+-]?\d*)d(?P<sides>\d+)) # XdY, where X is optional and can be negative
 |
-(?P<constant>[+-]?\d+) // a constant offset, which can be negative
+(?P<constant>[+-]?\d+) # a constant offset, which can be negative
 ").unwrap();
 
         dice_regex.captures_iter(&s)
@@ -81,6 +81,20 @@ fn sign(x: i32) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_constant_parsing() {
+        assert_eq!(vec![Constant(10)], DiceTerm::parse("10"));
+        assert_eq!(vec![Constant(10)], DiceTerm::parse("+10"));
+        assert_eq!(vec![Constant(-10)], DiceTerm::parse("-10"));
+    }
+
+    #[test]
+    fn test_dice_parsing() {
+        assert_eq!(vec![Dice{ count: 1, sides: 20 }], DiceTerm::parse("d20"));
+        assert_eq!(vec![Dice{ count: 1, sides: 20 }], DiceTerm::parse("1d20"));
+        assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("-1d20"));
+    }
 
     #[test]
     fn test_dice_rolls() {
