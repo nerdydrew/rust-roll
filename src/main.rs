@@ -1,3 +1,7 @@
+use structopt::StructOpt;
+mod arguments;
+
 fn main() {
-    println!("Hello, world!");
+    let args = arguments::Arguments::from_args();
+    println!("{:#?}", args);
 }
