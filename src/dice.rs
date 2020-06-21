@@ -44,8 +44,26 @@ impl DiceTerm {
     /// Returns the expected average value of this term.
     pub fn average(&self) -> f64 {
         match self {
-            Dice{count, sides} => count * (sides + 1) / 2.0,
-            Constant(constant) => constant as f64
+            Dice{count, sides} => (*count as f64) * (*sides as f64 + 1.0) / 2.0,
+            Constant(constant) => *constant as f64
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dice_averages() {
+        assert_eq!(10.5, Dice{count: 1, sides: 20}.average());
+        assert_eq!(-10.5, Dice{count: -3, sides: 6}.average());
+        assert_eq!(28.0, Dice{count: 8, sides: 6}.average());
+    }
+
+    #[test]
+    fn test_constant_averages() {
+        assert_eq!(10.0, Constant(10).average());
+        assert_eq!(-2.0, Constant(-2).average());
     }
 }
