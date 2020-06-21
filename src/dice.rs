@@ -94,6 +94,18 @@ mod tests {
         assert_eq!(vec![Dice{ count: 1, sides: 20 }], DiceTerm::parse("d20"));
         assert_eq!(vec![Dice{ count: 1, sides: 20 }], DiceTerm::parse("1d20"));
         assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("-1d20"));
+        //TODO assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("-d20"));
+        //TODO assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("- d20"));
+        //TODO assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("- 1d20"));
+        assert_eq!(vec![Dice{ count: 3, sides: 8 }], DiceTerm::parse("3d8"));
+    }
+
+    #[test]
+    fn test_compound_dice_parsing() {
+        assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 +5"));
+        assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 -5"));
+        //TODO assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 + 5"));
+        //TODO assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 - 5"));
     }
 
     #[test]
