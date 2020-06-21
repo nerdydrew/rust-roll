@@ -12,13 +12,14 @@ pub enum DiceTerm {
 }
 
 impl DiceTerm {
+    /// Parses the given string as dice terms. Any unknown values are skipped.
     pub fn parse(s: &str) -> Vec<DiceTerm> {
         let s = s.to_lowercase();
 
         let dice_regex = Regex::new(r"(?x)
-(?P<dice>(?P<count>[+-]?\d*)d(?P<sides>\d+))
+(?P<dice>(?P<count>[+-]?\d*)d(?P<sides>\d+)) // XdY, where X is optional and can be negative
 |
-(?P<constant>[+-]?\d+)
+(?P<constant>[+-]?\d+) // a constant offset, which can be negative
 ").unwrap();
 
         dice_regex.captures_iter(&s)
@@ -43,6 +44,7 @@ impl DiceTerm {
             .collect()
     }
 
+    /// Rolls the dice, returning a random value.
     pub fn roll(&self) -> i32 {
         match self {
             Dice{count, sides} => {
