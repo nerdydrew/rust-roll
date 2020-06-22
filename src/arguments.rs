@@ -1,5 +1,5 @@
 use structopt::StructOpt;
-use crate::dice::DiceTerm;
+use crate::dice::term::DiceTerm;
 
 #[derive(StructOpt, Debug)]
 pub struct Arguments {
