@@ -8,7 +8,7 @@ pub struct Arguments {
     pub average: bool,
 
     /// The dice rolls to calculate (like `2d4` or `d20+5`)
-    #[structopt()]
+    #[structopt(required=true)]
     dice: Vec<String>
 }
 
