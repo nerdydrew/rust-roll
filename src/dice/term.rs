@@ -1,3 +1,4 @@
+use std::fmt;
 use rand::Rng;
 use regex::Regex;
 use std::convert::TryInto;
@@ -75,6 +76,15 @@ impl DiceTerm {
         match self {
             DiceTerm::Dice{count, sides} => (*count as f64) * (*sides as f64 + 1.0) / 2.0,
             DiceTerm::Constant(constant) => *constant as f64
+        }
+    }
+}
+
+impl fmt::Display for DiceTerm {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DiceTerm::Dice{count, sides} => write!(f, "{}d{}", count, sides),
+            DiceTerm::Constant(constant) => write!(f, "{}", constant)
         }
     }
 }
@@ -163,5 +173,13 @@ mod tests {
     fn test_constant_averages() {
         assert_eq!(10.0, Constant(10).average());
         assert_eq!(-2.0, Constant(-2).average());
+    }
+
+    #[test]
+    fn test_display() {
+        assert_eq!("1d20", format!("{}", Dice{count: 1, sides: 20}));
+        assert_eq!("-3d8", format!("{}", Dice{count: -3, sides: 8}));
+        assert_eq!("5", format!("{}", Constant(5)));
+        assert_eq!("-2", format!("{}", Constant(-2)));
     }
 }
