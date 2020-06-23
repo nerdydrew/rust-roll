@@ -13,7 +13,7 @@ impl fmt::Display for Roll {
             .map(|x| x.to_string())
             .collect::<Vec<String>>()
             .join(" + ");
-        write!(f, "Rolled {} = {}", self.total(), dice_expression)
+        write!(f, "{} = {}", self.total(), dice_expression)
     }
 }
 
@@ -76,7 +76,7 @@ mod tests {
         let first_roll = SingleRoll { term: DiceTerm::Dice { count: 2, sides: 8 }, rolls: vec![1, 6] };
         let second_roll = SingleRoll { term: DiceTerm::Constant(-2), rolls: vec![-2] };
         let roll = Roll { rolls: vec![first_roll, second_roll] };
-        assert_eq!("Rolled 5 = 2d8 (1, 6) + -2", format!("{}", roll));
+        assert_eq!("5 = 2d8 (1, 6) + -2", format!("{}", roll));
     }
 
     #[test]
