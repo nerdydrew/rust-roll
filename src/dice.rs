@@ -7,7 +7,7 @@ mod term;
 pub fn run(args: &Arguments) {
     let roll = Roll::parse(&args.dice_terms.join(" "));
 
-    println!("Rolled {}", roll.total());
+    println!("{}", roll);
     if args.average {
         println!("Average: {}", roll.average());
     }

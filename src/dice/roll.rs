@@ -1,8 +1,15 @@
 use super::term::DiceTerm;
+use std::fmt;
 
 /// The result of dice rolls.
 pub struct Roll {
     rolls: Vec<SingleRoll>
+}
+
+impl fmt::Display for Roll {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Rolled {}", self.total())
+    }
 }
 
 impl Roll {
@@ -31,4 +38,35 @@ impl Roll {
 struct SingleRoll {
     term: DiceTerm,
     roll: i32
+}
+
+impl fmt::Display for SingleRoll {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.term {
+            DiceTerm::Dice { count, sides } => write!(f, "{}d{} ({})", count, sides, self.roll),
+            DiceTerm::Constant(constant) => write!(f, "{}", constant)
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_roll_display() {
+        let first_roll = SingleRoll { term: DiceTerm::Dice { count: 2, sides: 8 }, roll: 7 };
+        let second_roll = SingleRoll { term: DiceTerm::Constant(-2), roll: -2 };
+        let roll = Roll { rolls: vec![first_roll, second_roll] };
+        assert_eq!("Rolled 5", format!("{}", roll));
+    }
+
+    #[test]
+    fn test_single_roll_display() {
+        let roll = SingleRoll { term: DiceTerm::Dice { count: -2, sides: 8 }, roll: -6 };
+        assert_eq!("-2d8 (-6)", format!("{}", roll));
+
+        let roll = SingleRoll { term: DiceTerm::Constant(5), roll: 5 };
+        assert_eq!("5", format!("{}", roll));
+    }
 }
