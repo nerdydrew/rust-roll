@@ -8,7 +8,12 @@ pub struct Roll {
 
 impl fmt::Display for Roll {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Rolled {}", self.total())
+        let dice_expression = self.rolls
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join(" + ");
+        write!(f, "Rolled {} = {}", self.total(), dice_expression)
     }
 }
 
@@ -49,7 +54,14 @@ impl SingleRoll {
 impl fmt::Display for SingleRoll {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.term {
-            DiceTerm::Dice { count, sides } => write!(f, "{}d{} ({})", count, sides, self.total()),
+            DiceTerm::Dice { count, sides } => {
+                let comma_separated = self.rolls
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                write!(f, "{}d{} ({})", count, sides, comma_separated)
+            },
             DiceTerm::Constant(constant) => write!(f, "{}", constant)
         }
     }
@@ -64,13 +76,13 @@ mod tests {
         let first_roll = SingleRoll { term: DiceTerm::Dice { count: 2, sides: 8 }, rolls: vec![1, 6] };
         let second_roll = SingleRoll { term: DiceTerm::Constant(-2), rolls: vec![-2] };
         let roll = Roll { rolls: vec![first_roll, second_roll] };
-        assert_eq!("Rolled 5", format!("{}", roll));
+        assert_eq!("Rolled 5 = 2d8 (1, 6) + -2", format!("{}", roll));
     }
 
     #[test]
     fn test_single_roll_display() {
         let roll = SingleRoll { term: DiceTerm::Dice { count: -2, sides: 8 }, rolls: vec![-1, -5] };
-        assert_eq!("-2d8 (-6)", format!("{}", roll));
+        assert_eq!("-2d8 (-1, -5)", format!("{}", roll));
 
         let roll = SingleRoll { term: DiceTerm::Constant(5), rolls: vec![5] };
         assert_eq!("5", format!("{}", roll));
