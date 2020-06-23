@@ -1,5 +1,4 @@
 use structopt::StructOpt;
-use crate::dice::term::DiceTerm;
 
 #[derive(StructOpt, Debug)]
 pub struct Arguments {
@@ -8,12 +7,6 @@ pub struct Arguments {
     pub average: bool,
 
     /// The dice rolls to calculate (like `2d4` or `d20+5`)
-    #[structopt(required=true)]
-    dice: Vec<String>
-}
-
-impl Arguments {
-    pub fn dice(&self) -> Vec<DiceTerm> {
-        DiceTerm::parse(&self.dice.join(" "))
-    }
+    #[structopt(name="dice", required=true)]
+    pub dice_terms: Vec<String>
 }

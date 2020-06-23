@@ -1,8 +1,9 @@
-use std::fmt;
 use rand::Rng;
 use regex::Regex;
 use std::convert::TryInto;
+use std::fmt;
 
+/// Represents a single term in a dice expression.
 #[derive(Debug, PartialEq)]
 pub enum DiceTerm {
     /// A dice roll like `2d20` or `-d20`.
@@ -22,11 +23,13 @@ impl DiceTerm {
 (?P<constant>(?P<constant_sign>[+-]?)\s*(?P<constant_value>\d+)) # a constant offset, which can be negative
 ").unwrap();
 
-        dice_regex.captures_iter(&s)
+        dice_regex
+            .captures_iter(&s)
             .filter_map(|captures| {
                 if let Some(_) = captures.name("dice") {
                     // Matches [count_sign][count]d[sides]
-                    let mut count = captures.name("count")
+                    let mut count = captures
+                        .name("count")
                         .map(|x| x.as_str().parse().ok())
                         .flatten()
                         .unwrap_or(1);
@@ -34,13 +37,15 @@ impl DiceTerm {
                         // Make negative if negative sign is present.
                         count *= sign_of_string(sign.as_str());
                     }
-                    let sides = captures.name("sides")
+                    let sides = captures
+                        .name("sides")
                         .map(|x| x.as_str().parse().unwrap())
                         .unwrap();
                     Some(DiceTerm::Dice { count, sides })
                 } else if let Some(_) = captures.name("constant") {
                     // Matches [constant_sign][constant_value]
-                    let mut value = captures.name("constant_value")
+                    let mut value = captures
+                        .name("constant_value")
                         .map(|x| x.as_str().parse().ok())
                         .flatten()
                         .unwrap();
@@ -60,13 +65,13 @@ impl DiceTerm {
     /// Rolls the dice, returning a random value.
     pub fn roll(&self) -> i32 {
         match self {
-            DiceTerm::Dice{count, sides} => {
+            DiceTerm::Dice { count, sides } => {
                 let max_value = (sides+1).try_into().unwrap();
                 let total: i32 = (0..(*count).abs())
                     .map(|_| rand::thread_rng().gen_range(1, max_value))
                     .sum();
                 total * sign_of_int(*count)
-            },
+            }
             DiceTerm::Constant(constant) => *constant
         }
     }
@@ -74,7 +79,7 @@ impl DiceTerm {
     /// Returns the expected average value of this term.
     pub fn average(&self) -> f64 {
         match self {
-            DiceTerm::Dice{count, sides} => (*count as f64) * (*sides as f64 + 1.0) / 2.0,
+            DiceTerm::Dice { count, sides } => (*count as f64) * (*sides as f64 + 1.0) / 2.0,
             DiceTerm::Constant(constant) => *constant as f64
         }
     }
@@ -83,7 +88,7 @@ impl DiceTerm {
 impl fmt::Display for DiceTerm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DiceTerm::Dice{count, sides} => write!(f, "{}d{}", count, sides),
+            DiceTerm::Dice { count, sides } => write!(f, "{}d{}", count, sides),
             DiceTerm::Constant(constant) => write!(f, "{}", constant)
         }
     }
@@ -125,33 +130,33 @@ mod tests {
 
     #[test]
     fn test_dice_parsing() {
-        assert_eq!(vec![Dice{ count: 1, sides: 20 }], DiceTerm::parse("d20"));
-        assert_eq!(vec![Dice{ count: 1, sides: 20 }], DiceTerm::parse("1d20"));
-        assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("-1d20"));
-        assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("-d20"));
-        assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("- d20"));
-        assert_eq!(vec![Dice{ count: -1, sides: 20 }], DiceTerm::parse("- 1d20"));
-        assert_eq!(vec![Dice{ count: 3, sides: 8 }], DiceTerm::parse("3d8"));
+        assert_eq!(vec![Dice { count: 1, sides: 20 }], DiceTerm::parse("d20"));
+        assert_eq!(vec![Dice { count: 1, sides: 20 }], DiceTerm::parse("1d20"));
+        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("-1d20"));
+        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("-d20"));
+        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("- d20"));
+        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("- 1d20"));
+        assert_eq!(vec![Dice { count: 3, sides: 8 }], DiceTerm::parse("3d8"));
     }
 
     #[test]
     fn test_compound_dice_parsing() {
-        assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 +5"));
-        assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 -5"));
-        assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 + 5"));
-        assert_eq!(vec![Dice{ count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 - 5"));
+        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 +5"));
+        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 -5"));
+        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 + 5"));
+        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 - 5"));
     }
 
     #[test]
     fn test_dice_rolls() {
-        let roll = Dice{count: 1, sides: 20}.roll();
+        let roll = Dice { count: 1, sides: 20, }.roll();
         assert!(roll <= 20, "Roll {} should be no more than 20.", roll);
         assert!(roll >= 1, "Roll {} should be at least 1.", roll);
     }
 
     #[test]
     fn test_negative_dice_rolls() {
-        let roll = Dice{count: -3, sides: 6}.roll();
+        let roll = Dice { count: -3, sides: 6, }.roll();
         assert!(roll >= -18, "Roll {} should be at least -18.", roll);
         assert!(roll <= -3, "Roll {} should be no more than -3.", roll);
     }
@@ -164,9 +169,9 @@ mod tests {
 
     #[test]
     fn test_dice_averages() {
-        assert_eq!(10.5, Dice{count: 1, sides: 20}.average());
-        assert_eq!(-10.5, Dice{count: -3, sides: 6}.average());
-        assert_eq!(28.0, Dice{count: 8, sides: 6}.average());
+        assert_eq!(10.5, Dice { count: 1, sides: 20 }.average());
+        assert_eq!(-10.5, Dice { count: -3, sides: 6 }.average());
+        assert_eq!(28.0, Dice { count: 8, sides: 6 }.average());
     }
 
     #[test]
@@ -177,8 +182,8 @@ mod tests {
 
     #[test]
     fn test_display() {
-        assert_eq!("1d20", format!("{}", Dice{count: 1, sides: 20}));
-        assert_eq!("-3d8", format!("{}", Dice{count: -3, sides: 8}));
+        assert_eq!("1d20", format!("{}", Dice { count: 1, sides: 20 }));
+        assert_eq!("-3d8", format!("{}", Dice { count: -3, sides: 8 }));
         assert_eq!("5", format!("{}", Constant(5)));
         assert_eq!("-2", format!("{}", Constant(-2)));
     }
