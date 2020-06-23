@@ -18,7 +18,7 @@ impl Roll {
         let rolls = DiceTerm::parse(s)
             .into_iter()
             .map(|term| SingleRoll {
-                roll: term.roll(),
+                rolls: term.roll(),
                 term,
             })
             .collect();
@@ -26,7 +26,7 @@ impl Roll {
     }
 
     pub fn total(&self) -> i32 {
-        self.rolls.iter().map(|r| r.roll).sum()
+        self.rolls.iter().map(|r| r.total()).sum()
     }
 
     pub fn average(&self) -> f64 {
@@ -37,13 +37,19 @@ impl Roll {
 /// The rolled result of a single DiceTerm.
 struct SingleRoll {
     term: DiceTerm,
-    roll: i32
+    rolls: Vec<i32>
+}
+
+impl SingleRoll {
+    fn total(&self) -> i32 {
+        self.rolls.iter().sum()
+    }
 }
 
 impl fmt::Display for SingleRoll {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.term {
-            DiceTerm::Dice { count, sides } => write!(f, "{}d{} ({})", count, sides, self.roll),
+            DiceTerm::Dice { count, sides } => write!(f, "{}d{} ({})", count, sides, self.total()),
             DiceTerm::Constant(constant) => write!(f, "{}", constant)
         }
     }
@@ -55,18 +61,18 @@ mod tests {
 
     #[test]
     fn test_roll_display() {
-        let first_roll = SingleRoll { term: DiceTerm::Dice { count: 2, sides: 8 }, roll: 7 };
-        let second_roll = SingleRoll { term: DiceTerm::Constant(-2), roll: -2 };
+        let first_roll = SingleRoll { term: DiceTerm::Dice { count: 2, sides: 8 }, rolls: vec![1, 6] };
+        let second_roll = SingleRoll { term: DiceTerm::Constant(-2), rolls: vec![-2] };
         let roll = Roll { rolls: vec![first_roll, second_roll] };
         assert_eq!("Rolled 5", format!("{}", roll));
     }
 
     #[test]
     fn test_single_roll_display() {
-        let roll = SingleRoll { term: DiceTerm::Dice { count: -2, sides: 8 }, roll: -6 };
+        let roll = SingleRoll { term: DiceTerm::Dice { count: -2, sides: 8 }, rolls: vec![-1, -5] };
         assert_eq!("-2d8 (-6)", format!("{}", roll));
 
-        let roll = SingleRoll { term: DiceTerm::Constant(5), roll: 5 };
+        let roll = SingleRoll { term: DiceTerm::Constant(5), rolls: vec![5] };
         assert_eq!("5", format!("{}", roll));
     }
 }

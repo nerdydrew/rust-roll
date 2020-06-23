@@ -62,17 +62,17 @@ impl DiceTerm {
             .collect()
     }
 
-    /// Rolls the dice, returning a random value.
-    pub fn roll(&self) -> i32 {
+    /// Rolls the dice, returning a random value for each dice.
+    pub fn roll(&self) -> Vec<i32> {
         match self {
             DiceTerm::Dice { count, sides } => {
                 let max_value = (sides+1).try_into().unwrap();
-                let total: i32 = (0..(*count).abs())
+                (0..(*count).abs())
                     .map(|_| rand::thread_rng().gen_range(1, max_value))
-                    .sum();
-                total * sign_of_int(*count)
+                    .map(|x| x * sign_of_int(*count))
+                    .collect::<Vec<i32>>()
             }
-            DiceTerm::Constant(constant) => *constant
+            DiceTerm::Constant(constant) => vec![*constant]
         }
     }
 
@@ -149,22 +149,28 @@ mod tests {
 
     #[test]
     fn test_dice_rolls() {
-        let roll = Dice { count: 1, sides: 20, }.roll();
+        let rolls = Dice { count: 1, sides: 20, }.roll();
+        assert_eq!(1, rolls.len(), "1 die should have been rolled.");
+        let roll = rolls[0];
         assert!(roll <= 20, "Roll {} should be no more than 20.", roll);
         assert!(roll >= 1, "Roll {} should be at least 1.", roll);
     }
 
     #[test]
     fn test_negative_dice_rolls() {
-        let roll = Dice { count: -3, sides: 6, }.roll();
-        assert!(roll >= -18, "Roll {} should be at least -18.", roll);
-        assert!(roll <= -3, "Roll {} should be no more than -3.", roll);
+        let rolls = Dice { count: -3, sides: 6, }.roll();
+        assert_eq!(3, rolls.len(), "3 dice should have been rolled.");
+
+        for roll in rolls {
+            assert!(roll >= -6, "Roll {} should be at least -18.", roll);
+            assert!(roll <= -1, "Roll {} should be no more than -3.", roll);
+        }
     }
 
     #[test]
     fn test_constant_rolls() {
-        assert_eq!(10, Constant(10).roll());
-        assert_eq!(-2, Constant(-2).roll());
+        assert_eq!(vec![10], Constant(10).roll());
+        assert_eq!(vec![-2], Constant(-2).roll());
     }
 
     #[test]
