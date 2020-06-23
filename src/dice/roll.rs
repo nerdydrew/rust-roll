@@ -31,11 +31,17 @@ impl Roll {
     }
 
     pub fn total(&self) -> i32 {
-        self.rolls.iter().map(|r| r.total()).sum()
+        self.rolls
+            .iter()
+            .map(|r| r.total())
+            .sum()
     }
 
     pub fn average(&self) -> f64 {
-        self.rolls.iter().map(|r| r.term.average()).sum()
+        self.rolls
+            .iter()
+            .map(|r| r.term.average())
+            .sum()
     }
 }
 
