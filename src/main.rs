@@ -5,5 +5,7 @@ use structopt::StructOpt;
 
 fn main() {
     let args = arguments::Arguments::from_args();
-    dice::run(&args);
+    if let Err(e) = dice::run(&args) {
+        eprintln!("{}", e);
+    }
 }

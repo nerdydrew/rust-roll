@@ -13,19 +13,21 @@ pub enum DiceTerm {
 }
 
 impl DiceTerm {
-    /// Parses the given string as dice terms. Any unknown values are skipped.
-    pub fn parse(s: &str) -> Vec<DiceTerm> {
+    /// Parses the given string as dice terms. Returns an error message if any value cannot be parsed.
+    pub fn parse(s: &str) -> Result<Vec<DiceTerm>, &'static str> {
         let s = s.to_lowercase();
 
         let dice_regex = Regex::new(r"(?x)
 (?P<dice>(?P<count_sign>[+-])?\s*(?P<count>\d*)d(?P<sides>\d+)) # XdY, where X is optional and can be negative
 |
 (?P<constant>(?P<constant_sign>[+-]?)\s*(?P<constant_value>\d+)) # a constant offset, which can be negative
+|
+[^\s]+ # Any unrecognized non-whitespace (error)
 ").unwrap();
 
         dice_regex
             .captures_iter(&s)
-            .filter_map(|captures| {
+            .map(|captures| {
                 if let Some(_) = captures.name("dice") {
                     // Matches [count_sign][count]d[sides]
                     let mut count = captures
@@ -41,7 +43,7 @@ impl DiceTerm {
                         .name("sides")
                         .map(|x| x.as_str().parse().unwrap())
                         .unwrap();
-                    Some(DiceTerm::Dice { count, sides })
+                    Ok(DiceTerm::Dice { count, sides })
                 } else if let Some(_) = captures.name("constant") {
                     // Matches [constant_sign][constant_value]
                     let mut value = captures
@@ -53,10 +55,9 @@ impl DiceTerm {
                         // Make negative if negative sign is present.
                         value *= sign_of_string(sign.as_str());
                     }
-
-                    Some(DiceTerm::Constant(value))
+                    Ok(DiceTerm::Constant(value))
                 } else {
-                    None
+                    Err("Could not parse dice expression.")
                 }
             })
             .collect()
@@ -121,30 +122,38 @@ mod tests {
 
     #[test]
     fn test_constant_parsing() {
-        assert_eq!(vec![Constant(10)], DiceTerm::parse("10"));
-        assert_eq!(vec![Constant(10)], DiceTerm::parse("+10"));
-        assert_eq!(vec![Constant(10)], DiceTerm::parse(" + 10"));
-        assert_eq!(vec![Constant(-10)], DiceTerm::parse("-10"));
-        assert_eq!(vec![Constant(-10)], DiceTerm::parse(" - 10"));
+        assert_eq!(Ok(vec![Constant(10)]), DiceTerm::parse("10"));
+        assert_eq!(Ok(vec![Constant(10)]), DiceTerm::parse("+10"));
+        assert_eq!(Ok(vec![Constant(10)]), DiceTerm::parse(" + 10"));
+        assert_eq!(Ok(vec![Constant(-10)]), DiceTerm::parse("-10"));
+        assert_eq!(Ok(vec![Constant(-10)]), DiceTerm::parse(" - 10"));
     }
 
     #[test]
     fn test_dice_parsing() {
-        assert_eq!(vec![Dice { count: 1, sides: 20 }], DiceTerm::parse("d20"));
-        assert_eq!(vec![Dice { count: 1, sides: 20 }], DiceTerm::parse("1d20"));
-        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("-1d20"));
-        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("-d20"));
-        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("- d20"));
-        assert_eq!(vec![Dice { count: -1, sides: 20 }], DiceTerm::parse("- 1d20"));
-        assert_eq!(vec![Dice { count: 3, sides: 8 }], DiceTerm::parse("3d8"));
+        assert_eq!(Ok(vec![Dice { count: 1, sides: 20 }]), DiceTerm::parse("d20"));
+        assert_eq!(Ok(vec![Dice { count: 1, sides: 20 }]), DiceTerm::parse("1d20"));
+        assert_eq!(Ok(vec![Dice { count: -1, sides: 20 }]), DiceTerm::parse("-1d20"));
+        assert_eq!(Ok(vec![Dice { count: -1, sides: 20 }]), DiceTerm::parse("-d20"));
+        assert_eq!(Ok(vec![Dice { count: -1, sides: 20 }]), DiceTerm::parse("- d20"));
+        assert_eq!(Ok(vec![Dice { count: -1, sides: 20 }]), DiceTerm::parse("- 1d20"));
+        assert_eq!(Ok(vec![Dice { count: 3, sides: 8 }]), DiceTerm::parse("3d8"));
     }
 
     #[test]
     fn test_compound_dice_parsing() {
-        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 +5"));
-        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 -5"));
-        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(5)], DiceTerm::parse("2d20 + 5"));
-        assert_eq!(vec![Dice { count: 2, sides: 20 }, Constant(-5)], DiceTerm::parse("2d20 - 5"));
+        assert_eq!(Ok(vec![Dice { count: 2, sides: 20 }, Constant(5)]), DiceTerm::parse("2d20 +5"));
+        assert_eq!(Ok(vec![Dice { count: 2, sides: 20 }, Constant(-5)]), DiceTerm::parse("2d20 -5"));
+        assert_eq!(Ok(vec![Dice { count: 2, sides: 20 }, Constant(5)]), DiceTerm::parse("2d20 + 5"));
+        assert_eq!(Ok(vec![Dice { count: 2, sides: 20 }, Constant(-5)]), DiceTerm::parse("2d20 - 5"));
+    }
+
+    #[test]
+    fn test_invalid_parsing() {
+        assert!(DiceTerm::parse("no").is_err());
+        assert!(DiceTerm::parse("2d20 + -5").is_err());
+        assert!(DiceTerm::parse("2d20 + 5 + no").is_err());
+        assert!(DiceTerm::parse("2c20").is_err());
     }
 
     #[test]

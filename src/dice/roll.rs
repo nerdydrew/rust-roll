@@ -19,15 +19,15 @@ impl fmt::Display for Roll {
 
 impl Roll {
     /// Parses the given string as dice terms. Any unknown values are skipped.
-    pub fn parse(s: &str) -> Roll {
-        let rolls = DiceTerm::parse(s)
+    pub fn parse(s: &str) -> Result<Roll, &'static str> {
+        let rolls = DiceTerm::parse(s)?
             .into_iter()
             .map(|term| SingleRoll {
                 rolls: term.roll(),
                 term,
             })
             .collect();
-        Roll { rolls }
+        Ok(Roll { rolls })
     }
 
     pub fn total(&self) -> i32 {
