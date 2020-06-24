@@ -6,7 +6,7 @@ mod roll;
 mod term;
 
 pub fn run(args: &Arguments) -> Result<(), Box<dyn Error>> {
-    let roll = Roll::parse(&args.dice_terms.join(" "))?;
+    let roll = Roll::parse(&args.dice_terms.join(""))?;
 
     println!("Rolled {}", roll);
     if args.average {

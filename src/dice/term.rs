@@ -15,14 +15,16 @@ pub enum DiceTerm {
 impl DiceTerm {
     /// Parses the given string as dice terms. Returns an error message if any value cannot be parsed.
     pub fn parse(s: &str) -> Result<Vec<DiceTerm>, &'static str> {
-        let s = s.to_lowercase();
+        // Convert to lowercase and strip whitespace for simplicity in parsing.
+        let mut s = s.to_lowercase();
+        s.retain(|c| !c.is_whitespace());
 
         let dice_regex = Regex::new(r"(?x)
-(?P<dice>(?P<count_sign>[+-])?\s*(?P<count>\d*)d(?P<sides>\d+)) # XdY, where X is optional and can be negative
+(?P<dice>(?P<count_sign>[+-])?(?P<count>\d+)?d(?P<sides>\d+)) # XdY, where X is optional and can be negative
 |
-(?P<constant>(?P<constant_sign>[+-]?)\s*(?P<constant_value>\d+)) # a constant offset, which can be negative
+(?P<constant>[+-]?\d+) # a constant offset, which can be negative
 |
-[^\s]+ # Any unrecognized non-whitespace (error)
+.+ # Any unrecognized characters (error)
 ").unwrap();
 
         dice_regex
@@ -30,32 +32,29 @@ impl DiceTerm {
             .map(|captures| {
                 if let Some(_) = captures.name("dice") {
                     // Matches [count_sign][count]d[sides]
+
                     let mut count = captures
                         .name("count")
-                        .map(|x| x.as_str().parse().ok())
-                        .flatten()
-                        .unwrap_or(1);
+                        .map(|x| x.as_str())
+                        .unwrap_or("1")
+                        .to_owned();
+                    // Prepend the sign if present.
                     if let Some(sign) = captures.name("count_sign") {
-                        // Make negative if negative sign is present.
-                        count *= sign_of_string(sign.as_str());
+                        count.insert_str(0, sign.as_str());
                     }
+                    // Convert to an integer now that we've accounted for optional values.
+                    let count: i32 = count.parse().unwrap();
+
                     let sides = captures
                         .name("sides")
-                        .map(|x| x.as_str().parse().unwrap())
+                        .unwrap()
+                        .as_str()
+                        .parse()
                         .unwrap();
                     Ok(DiceTerm::Dice { count, sides })
-                } else if let Some(_) = captures.name("constant") {
-                    // Matches [constant_sign][constant_value]
-                    let mut value = captures
-                        .name("constant_value")
-                        .map(|x| x.as_str().parse().ok())
-                        .flatten()
-                        .unwrap();
-                    if let Some(sign) = captures.name("constant_sign") {
-                        // Make negative if negative sign is present.
-                        value *= sign_of_string(sign.as_str());
-                    }
-                    Ok(DiceTerm::Constant(value))
+                } else if let Some(constant) = captures.name("constant") {
+                    // Matches [constant]
+                    Ok(DiceTerm::Constant(constant.as_str().parse().unwrap()))
                 } else {
                     Err("Could not parse dice expression.")
                 }
@@ -70,7 +69,7 @@ impl DiceTerm {
                 let max_value = (sides+1).try_into().unwrap();
                 (0..(*count).abs())
                     .map(|_| rand::thread_rng().gen_range(1, max_value))
-                    .map(|x| x * sign_of_int(*count))
+                    .map(|x| x * count.signum())
                     .collect::<Vec<i32>>()
             }
             DiceTerm::Constant(constant) => vec![*constant]
@@ -92,26 +91,6 @@ impl fmt::Display for DiceTerm {
             DiceTerm::Dice { count, sides } => write!(f, "{}d{}", count, sides),
             DiceTerm::Constant(constant) => write!(f, "{}", constant)
         }
-    }
-}
-
-/// Returns `+1`, `-1`, or `0` according to the sign of the input.
-fn sign_of_int(x: i32) -> i32 {
-    if x == 0 {
-        0
-    } else if x > 0 {
-        1
-    } else {
-        -1
-    }
-}
-
-/// Returns `-1` if the input is a negative sign or `1` otherwise.
-fn sign_of_string(x: &str) -> i32 {
-    if x == "-" {
-        -1
-    } else {
-        1
     }
 }
 
